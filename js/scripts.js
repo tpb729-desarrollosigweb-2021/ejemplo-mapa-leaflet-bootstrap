@@ -1,5 +1,5 @@
 // Mapa Leaflet
-var mapa = L.map('mapid').setView([9.5, -84.10], 8);
+var mapa = L.map('mapid').fitWorld();
 
 
 // Definición de capas base
@@ -41,7 +41,7 @@ control_capas = L.control.layers(capas_base).addTo(mapa);
 
 // Control de escala
 L.control.scale().addTo(mapa);
-   
+  
 
 // Capa vectorial de registros agrupados de carnívoros
 $.getJSON("https://tpb729-desarrollosigweb-2021.github.io/datos/gbif/carnivora-cr-wgs84.geojson", function(geodata) {
@@ -64,13 +64,16 @@ $.getJSON("https://tpb729-desarrollosigweb-2021.github.io/datos/gbif/carnivora-c
     }
   });
 
+
   // Capa de calor (heatmap)
   coordenadas = geodata.features.map(feat => feat.geometry.coordinates.reverse());
   var capa_carnivora_calor = L.heatLayer(coordenadas, {radius: 30, blur: 1});
 
+
   // Capa de puntos agrupados
   var capa_carnivora_agrupados = L.markerClusterGroup({spiderfyOnMaxZoom: true});
   capa_carnivora_agrupados.addLayer(capa_carnivora);
+
 
   // Se añaden las capas al mapa y al control de capas
   capa_carnivora_calor.addTo(mapa);
@@ -79,4 +82,24 @@ $.getJSON("https://tpb729-desarrollosigweb-2021.github.io/datos/gbif/carnivora-c
   control_capas.addOverlay(capa_carnivora_agrupados, 'Registros agrupados');
   // capa_carnivora.addTo(mapa);
   control_capas.addOverlay(capa_carnivora, 'Registros individuales de carnívoros');
+
+
+	function onLocationFound(e) {
+		var radius = e.accuracy / 2;
+
+		L.marker(e.latlng).addTo(mapa)
+			.bindPopup("Usted está en un radio de " + radius + " m de aquí").openPopup();
+
+		L.circle(e.latlng, radius).addTo(mapa);
+	}
+
+	function onLocationError(e) {
+		alert(e.message);
+	}
+
+	mapa.on('locationfound', onLocationFound);
+	mapa.on('locationerror', onLocationError);
+
+	mapa.locate({setView: true, maxZoom: 16});
+
 });
